@@ -6,20 +6,33 @@ private enum Style {
     static let red = Color(nsColor: .systemRed)
 }
 
+private struct NotchButtonStyle: PrimitiveButtonStyle {
+    var feedback: () -> Void
+
+    func makeBody(configuration: Configuration) -> some View {
+        Button(role: configuration.role) {
+            feedback()
+            configuration.trigger()
+        } label: {
+            configuration.label
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct NotchView: View {
     @ObservedObject var model: TimerModel
     var openControls: () -> Void
     var closeControls: () -> Void
     var hoverChanged: (Bool) -> Void
+    var dragChanged: (CGPoint) -> Void
+    var dragEnded: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draftMinutes = 25
     @State private var draftSeconds = 0
 
     private var expanded: Bool { model.notchScreen != .compact }
     private var size: CGSize { expanded ? NotchLayout.expandedSize : NotchLayout.size }
-    private var transition: AnyTransition {
-        reduceMotion ? .opacity : .opacity.combined(with: .offset(y: -3))
-    }
 
     var body: some View {
         ZStack {
@@ -33,18 +46,46 @@ struct NotchView: View {
                 }
             }
             .id(model.notchScreen)
-            .transition(transition)
+            .transition(.opacity.animation(.easeOut(duration: 0.12)))
         }
         .frame(width: size.width, height: size.height)
-        .background(.black)
+        .background {
+            Color.black
+            if !expanded {
+                compactProgressBackground
+                    .transition(.identity)
+            }
+        }
         .clipShape(Capsule())
         .overlay(Capsule().strokeBorder(.white.opacity(expanded ? 0.16 : 0.08), lineWidth: 0.5))
-        .animation(NotchLayout.animation(reduceMotion: reduceMotion), value: model.notchScreen)
+        .animation(NotchLayout.animation(reduceMotion: reduceMotion), value: expanded)
         .contentShape(Capsule())
         .onHover(perform: hoverChanged)
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 5)
+                .onChanged { _ in dragChanged(NSEvent.mouseLocation) }
+                .onEnded { _ in dragEnded() }
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .preferredColorScheme(.dark)
         .onExitCommand(perform: closeControls)
+    }
+
+    private var compactProgressBackground: some View {
+        // A stopwatch has no target duration, so it uses a solid running tint.
+        let fraction = model.engine.isRunning && model.engine.mode == .timer
+            ? min(1, max(0, model.progress)) : 1
+        let color = model.engine.isRunning ? Style.green : Style.red
+        return GeometryReader { geometry in
+            Rectangle()
+                .fill(color.opacity(0.45))
+                .frame(width: geometry.size.width * fraction)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .animation(reduceMotion ? nil : .linear(duration: 0.1), value: fraction)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: model.engine.isRunning)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private var compact: some View {
@@ -53,13 +94,13 @@ struct NotchView: View {
                 HStack(spacing: 5) {
                     Image(systemName: model.engine.mode == .timer ? "timer" : "stopwatch")
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(model.engine.isFinished ? Style.red : .secondary)
+                        .foregroundStyle(.white.opacity(0.8))
                     Text(model.time)
                         .font(.system(size: 13, weight: .medium))
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.65)
-                        .foregroundStyle(model.engine.isFinished ? Style.red : .primary)
+                        .foregroundStyle(.white)
                         .contentTransition(.numericText())
                 }
                 .padding(.leading, 6)
@@ -67,7 +108,7 @@ struct NotchView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
             .accessibilityLabel("\(model.engine.mode.rawValue), \(model.time). \(model.status)")
             .accessibilityHint("Open notch controls")
             .help("Notch controls")
@@ -75,12 +116,12 @@ struct NotchView: View {
             Button(action: model.toggle) {
                 Image(systemName: model.engine.isRunning ? "pause.fill" : "play.fill")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(model.engine.isRunning ? Style.red : Style.green)
+                    .foregroundStyle(.white)
                     .frame(width: 18, height: 18)
-                    .background((model.engine.isRunning ? Style.red : Style.green).opacity(0.16), in: Circle())
+                    .background(.black.opacity(0.28), in: Circle())
                     .contentShape(Circle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
             .accessibilityLabel(model.engine.isRunning ? "Pause" : "Start")
             .help(model.engine.isRunning ? "Pause" : "Start")
             .padding(.trailing, 3)
@@ -101,7 +142,7 @@ struct NotchView: View {
                 .frame(height: 28)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
             .disabled(model.engine.isRunning)
             .help(model.engine.isRunning ? "Pause to change mode" : "Change mode")
 
@@ -116,7 +157,7 @@ struct NotchView: View {
                     .frame(maxWidth: .infinity, minHeight: 28)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
             .disabled(model.engine.isRunning || model.engine.mode == .stopwatch)
             .accessibilityLabel("Duration, \(model.time)")
             .help(model.engine.isRunning ? "Pause to change duration" : "Change duration")
@@ -206,7 +247,7 @@ struct NotchView: View {
                 .background(tint.opacity(0.14), in: Circle())
                 .contentShape(Circle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
         .accessibilityLabel(label)
         .help(label)
     }
@@ -222,7 +263,7 @@ struct NotchView: View {
                 .background(selected ? Color.white : .white.opacity(0.10), in: Capsule())
                 .contentShape(Capsule())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -234,7 +275,10 @@ struct NotchView: View {
                 .contentTransition(.numericText())
             Text(unit).font(.system(size: 10)).foregroundStyle(.secondary)
             Spacer(minLength: 0)
-            Stepper(unit == "min" ? "Minutes" : "Seconds", value: value, in: range)
+            Stepper(unit == "min" ? "Minutes" : "Seconds", value: Binding(
+                get: { value.wrappedValue },
+                set: { value.wrappedValue = $0; model.playButtonSound() }
+            ), in: range)
                 .labelsHidden()
                 .controlSize(.small)
         }

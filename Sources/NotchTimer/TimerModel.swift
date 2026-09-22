@@ -14,6 +14,11 @@ final class TimerModel: ObservableObject {
     @Published var soundEnabled: Bool {
         didSet { UserDefaults.standard.set(soundEnabled, forKey: "soundEnabled") }
     }
+    @Published var buttonSoundsEnabled: Bool {
+        didSet { UserDefaults.standard.set(buttonSoundsEnabled, forKey: "buttonSoundsEnabled") }
+    }
+    private let buttonSound = NSSound(named: "Tink")
+    private var lastButtonSound: TimeInterval = -.infinity
     private let clock = ContinuousClock()
     private let origin = ContinuousClock.now
     private var ticker: AnyCancellable?
@@ -21,6 +26,8 @@ final class TimerModel: ObservableObject {
     init() {
         let defaults = UserDefaults.standard
         soundEnabled = defaults.object(forKey: "soundEnabled") as? Bool ?? true
+        buttonSoundsEnabled = defaults.object(forKey: "buttonSoundsEnabled") as? Bool ?? true
+        buttonSound?.volume = 0.22
         if let duration = defaults.object(forKey: "duration") as? Double {
             engine.setDuration(duration)
         }
@@ -37,6 +44,15 @@ final class TimerModel: ObservableObject {
     private func timestamp() -> TimeInterval {
         let components = origin.duration(to: clock.now).components
         return Double(components.seconds) + Double(components.attoseconds) / 1e18
+    }
+
+    func playButtonSound() {
+        guard buttonSoundsEnabled else { return }
+        let time = timestamp()
+        guard time - lastButtonSound >= 0.08 else { return }
+        lastButtonSound = time
+        buttonSound?.stop()
+        buttonSound?.play()
     }
 
     func toggle() {
