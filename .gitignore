@@ -3,3 +3,8 @@
 dist/
 .DS_Store
 /demo.gif
+
+# Local editor settings and agent instructions
+.vscode/
+AGENTS.md
+agent.md
