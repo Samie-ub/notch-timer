@@ -16,6 +16,11 @@ public struct TimerEngine: Sendable {
 
     public init() {}
 
+    /// A paused session still has time to preserve across an app restart.
+    public var hasUnfinishedSession: Bool {
+        isRunning || (!isFinished && accumulated > 0)
+    }
+
     public func elapsed(at now: TimeInterval) -> TimeInterval {
         accumulated + (startedAt.map { max(0, now - $0) } ?? 0)
     }

@@ -13,7 +13,8 @@ A minimal timer and stopwatch for macOS, built with SwiftUI and AppKit. Hover to
 - **Drag to position** — move the compact notch or expanded strip anywhere on your displays; its position is saved.
 - **Subtle animation** — smooth transitions with support for Reduce Motion.
 - **Timer sounds** — `start.m4a` and `pause.mp3` play when a session starts or pauses, `stop.mp3` when you reset an active or paused session, and `times-up.mp3` when a countdown completes. The completion sound can be toggled from the controls. No sounds play on button clicks.
-- **Native and local** — no dependencies, accounts, or network access; no Dock icon.
+- **Native** — SwiftUI and AppKit, no accounts or Dock icon. Sparkle checks for app updates over HTTPS; timer data stays local.
+- **App updates** — check from the menu bar, or toggle automatic checks. Installation is user initiated and waits for unfinished timer/stopwatch sessions to finish or reset.
 - **Browser Focus for Chrome** — optionally block distracting websites during countdowns with a companion extension. Existing tabs are covered without closing or reloading them.
 
 ## Get started
@@ -64,6 +65,23 @@ The extension needs HTTP(S) site access to cover existing pages and redirect new
 If you move the app, reconnect Chrome so the helper path is updated. After rebuilding, reload the extension in `chrome://extensions` to apply its updated visuals and icon. To uninstall, remove the extension in Chrome; optionally delete `~/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.local.notchtimer.focus.json`. Removing the extension immediately removes its request rules; reload an existing covered tab if Chrome leaves its injected cover visible.
 
 The notch starts centered on the primary display, below the camera cutout on Macs that have one. Drag it to reposition it; expansion and collapse keep your chosen position, with adjustments at screen edges to keep all controls visible. Adjust its dimensions and top spacing in [`NotchLayout`](Sources/NotchTimer/App.swift).
+
+## Updating the app
+
+Install an updater-enabled build once, then use **Check for Updates…** in the menu bar.
+**Automatically Check for Updates** can be toggled there too. Updates are verified with
+Sparkle's Ed25519 signatures; no Apple Developer membership is required. Without Apple
+Developer ID signing and notarization, downloaded first-time installs may need manual
+approval in macOS Privacy & Security. Plain `swift run` disables the update menu because
+it is not an installed app bundle.
+
+If you select Install while a timer or stopwatch session is unfinished, restarting waits
+until completion or reset. Pausing preserves the session and keeps the update waiting.
+Quitting explicitly still quits normally. Automatic silent installation is disabled.
+
+The update feed uses the `appcast.xml` asset on the latest GitHub Release. It becomes
+available after the first release is published; until then checks report a feed error.
+See [release instructions](docs/updates.md) for preparing and publishing signed updates.
 
 ## Development
 

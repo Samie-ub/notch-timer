@@ -11,6 +11,10 @@ if [ ! -f resources/settime.icns ]; then
     swift scripts/make-app-icon.swift resources/settime.iconset
 fi
 cp "$BIN_DIR/NotchTimer" "$APP/Contents/MacOS/NotchTimer"
+SPARKLE="$PWD/.build/artifacts/sparkle/Sparkle/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework"
+mkdir -p "$APP/Contents/Frameworks"
+ditto "$SPARKLE" "$APP/Contents/Frameworks/Sparkle.framework"
+cp "$PWD/.build/artifacts/sparkle/Sparkle/LICENSE" "$APP/Contents/Resources/Sparkle-LICENSE.txt"
 cp resources/settime.icns "$APP/Contents/Resources/settime.icns"
 # Compile the Chrome-only helper separately so plain `swift run` remains unambiguous.
 swiftc -O -target "$(uname -m)-apple-macosx14.0" \
@@ -38,6 +42,15 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
+python3 scripts/configure-updates.py "$APP/Contents/Info.plist"
+# Sign nested Sparkle executables inside-out; ad-hoc signing needs no Apple membership.
+FRAMEWORK="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+codesign --force --sign - "$FRAMEWORK/XPCServices/Downloader.xpc"
+codesign --force --sign - "$FRAMEWORK/XPCServices/Installer.xpc"
+codesign --force --sign - "$FRAMEWORK/Autoupdate"
+codesign --force --sign - "$FRAMEWORK/Updater.app"
+codesign --force --sign - "$APP/Contents/Frameworks/Sparkle.framework"
 codesign --force --sign - "$APP/Contents/MacOS/BrowserFocusHost"
 codesign --force --sign - "$APP"
+codesign --verify --deep --strict "$APP"
 echo "Built: $APP"

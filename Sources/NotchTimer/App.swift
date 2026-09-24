@@ -44,6 +44,10 @@ final class FloatingPanel: NSPanel {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let model = TimerModel()
+    private lazy var updates = UpdateController { [weak self] in
+        guard let self else { return false }
+        return model.engine.hasUnfinishedSession
+    }
     private var notch: FloatingPanel!
     private var transitionID = 0
     private var isPreparingExpansion = false
@@ -110,6 +114,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         resetItem.target = self
         let positionItem = menu.addItem(withTitle: "Reset Notch Position", action: #selector(resetPosition), keyEquivalent: "")
         positionItem.target = self
+        menu.addItem(.separator())
+        let updateItem = menu.addItem(withTitle: "Check for Updates…", action: #selector(UpdateController.checkForUpdates(_:)), keyEquivalent: "")
+        updateItem.target = updates
+        let automaticItem = menu.addItem(withTitle: "Automatically Check for Updates", action: #selector(UpdateController.toggleAutomaticChecks(_:)), keyEquivalent: "")
+        automaticItem.target = updates
         menu.addItem(.separator())
         menu.addItem(withTitle: "Quit settime", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         statusItem.menu = menu
@@ -256,6 +265,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func resetTimer() { model.reset() }
     @objc private func screenChanged() { placeNotch() }
     @objc private func wokeUp() { model.tick(); placeNotch(); notch.orderFrontRegardless() }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        updates.shouldCancelRestart() ? .terminateCancel : .terminateNow
+    }
 
     func applicationWillTerminate(_ notification: Notification) {
         model.browserFocus.stop()
