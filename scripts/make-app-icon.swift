@@ -101,11 +101,7 @@ let variants: [(String, Int)] = [
 for (name, size) in variants {
     try drawIcon(size: size).write(to: iconset.appendingPathComponent(name), options: .atomic)
 }
-let extensionIcons = [("icon16.png", 16), ("icon32.png", 32), ("icon48.png", 48), ("icon128.png", 128)]
-let extensionDirectory = iconset.deletingLastPathComponent().deletingLastPathComponent()
-for (name, size) in extensionIcons {
-    try drawIcon(size: size).write(to: extensionDirectory.appendingPathComponent("browser-extension").appendingPathComponent(name), options: .atomic)
-}
+// Focus Mode extension icons are generated separately by make-focus-icons.swift.
 
 let catalog: [[String: String]] = [
     ["filename": "icon_16x16.png", "idiom": "mac", "scale": "1x", "size": "16x16"],

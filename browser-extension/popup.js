@@ -8,7 +8,7 @@ async function refresh() {
       state.connected ? 'Connected · sites are unlocked' : 'Connect settime to get started';
     dot.className = 'status-dot' + (state.active ? ' active' : state.connected ? '' : ' warning');
     document.getElementById('error').textContent = state.connected ? '' :
-      (state.error || 'Paste your extension ID into settime → Browser Focus → Connect Chrome.');
+      (state.error || 'Paste your extension ID into settime → Focus Mode → Connect Chrome.');
   } catch {
     document.getElementById('status').textContent = 'Extension unavailable';
     document.getElementById('error').textContent = 'Reload this extension in chrome://extensions.';

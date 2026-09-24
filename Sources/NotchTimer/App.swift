@@ -106,7 +106,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         let settingsItem = menu.addItem(withTitle: "Show Controls", action: #selector(showSettings), keyEquivalent: ",")
         settingsItem.target = self
-        let focusItem = menu.addItem(withTitle: "Browser Focus…", action: #selector(showBrowserFocus), keyEquivalent: "")
+        let focusItem = menu.addItem(withTitle: "Focus Mode…", action: #selector(showBrowserFocus), keyEquivalent: "")
         focusItem.target = self
         let toggleItem = menu.addItem(withTitle: "Start / Pause", action: #selector(toggleTimer), keyEquivalent: "")
         toggleItem.target = self

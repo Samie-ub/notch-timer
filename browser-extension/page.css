@@ -35,10 +35,10 @@ footer { margin-top: 15px; color: var(--subtle); font-size: 10px; text-align: ce
 .blocked-shell { width: min(100%, 520px); }
 .focus-card { margin-top: 36px; padding: 34px; border: 1px solid #2a3a41; border-radius: 24px; background: linear-gradient(145deg, #1a2931, #17242b); box-shadow: 0 24px 80px #050b0e66; }
 .focus-mark { position: relative; display: grid; width: 52px; height: 52px; margin-bottom: 25px; place-items: center; border: 2px solid var(--mint); border-radius: 50%; }
-.focus-mark::before { position: absolute; top: -7px; width: 14px; height: 5px; border-radius: 3px; background: var(--mint); content: ""; }
-.focus-mark span { position: absolute; width: 2px; border-radius: 2px; background: #e8f5ef; transform-origin: bottom; }
-.focus-mark span:first-child { height: 14px; transform: translateY(-2px); }
-.focus-mark span:last-child { height: 10px; transform: translate(-4px, 0) rotate(-58deg); }
+.focus-mark::before { width: 10px; height: 10px; border-radius: 50%; background: var(--mint); content: ""; }
+.focus-mark span { position: absolute; border-radius: 2px; background: var(--mint); }
+.focus-mark span:first-child { width: 3px; height: 14px; top: -7px; box-shadow: 0 48px var(--mint); }
+.focus-mark span:last-child { width: 14px; height: 3px; left: -7px; box-shadow: 48px 0 var(--mint); }
 .focus-card .eyebrow { margin: 0 0 8px; }
 .focus-card h1 { margin: 0; font-size: clamp(28px, 6vw, 38px); }
 .session-status { margin: 10px 0 0; color: var(--mint); font-size: 15px; font-weight: 560; font-variant-numeric: tabular-nums; }

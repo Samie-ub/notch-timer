@@ -1,14 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "settime — Browser Focus",
-  "version": "0.2.0",
+  "name": "settime — Focus Mode",
+  "version": "0.2.1",
   "minimum_chrome_version": "120",
   "description": "Stay focused with settime by blocking distracting websites during a timer.",
   "permissions": ["nativeMessaging", "declarativeNetRequestWithHostAccess", "alarms", "scripting"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "background": {"service_worker": "background.js", "type": "module"},
   "icons": {"16": "icon16.png", "32": "icon32.png", "48": "icon48.png", "128": "icon128.png"},
-  "action": {"default_popup": "popup.html", "default_title": "settime Browser Focus", "default_icon": {"16": "icon16.png", "32": "icon32.png"}},
+  "action": {"default_popup": "popup.html", "default_title": "settime Focus Mode", "default_icon": {"16": "icon16.png", "32": "icon32.png"}},
   "content_scripts": [{"matches": ["http://*/*", "https://*/*"], "js": ["overlay.js"], "run_at": "document_start"}],
   "web_accessible_resources": [{"resources": ["blocked.html", "page.css", "blocked.js"], "matches": ["http://*/*", "https://*/*"]}]
 }

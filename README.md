@@ -15,7 +15,7 @@ A minimal timer and stopwatch for macOS, built with SwiftUI and AppKit. Hover to
 - **Timer sounds** — `start.m4a` and `pause.mp3` play when a session starts or pauses, `stop.mp3` when you reset an active or paused session, and `times-up.mp3` when a countdown completes. The completion sound can be toggled from the controls. No sounds play on button clicks.
 - **Native** — SwiftUI and AppKit, no accounts or Dock icon. Sparkle checks for app updates over HTTPS; timer data stays local.
 - **App updates** — check from the menu bar, or toggle automatic checks. Installation is user initiated and waits for unfinished timer/stopwatch sessions to finish or reset.
-- **Browser Focus for Chrome** — optionally block distracting websites during countdowns with a companion extension. Existing tabs are covered without closing or reloading them.
+- **Focus Mode for Chrome** — optionally block distracting websites during countdowns with a companion extension. Existing tabs are covered without closing or reloading them.
 
 ## Get started
 
@@ -47,16 +47,16 @@ The build script creates a locally signed app in `dist/`. For development, run `
 
 Pause before changing mode or duration. Unapplied custom-time changes are discarded when the strip closes. Active timer sessions do not persist after quitting.
 
-## Browser Focus setup
+## Focus Mode setup
 
 1. Build the app and keep `dist/settime.app` in its final location (or copy it to Applications before setup).
-2. Launch that build, then click the **globe** in the notch controls, or choose **Browser Focus…** from the menu bar menu.
+2. Launch that build, then click the **target icon** in the notch controls, or choose **Focus Mode…** from the menu bar menu.
 3. Expand **Connect Chrome · one-time setup** and click **Show Extension Folder**.
 4. In Chrome, open `chrome://extensions`, enable **Developer mode**, choose **Load unpacked**, and select that `browser-extension` folder.
-5. Copy the extension's ID into Browser Focus settings and click **Connect Chrome**. The extension popup should say **Bridge connected**.
-6. Add websites, enable Browser Focus, and start a countdown. Stopwatch mode does not block sites.
+5. Copy the extension's ID into Focus Mode settings and click **Connect Chrome**. The extension popup should say **Bridge connected**.
+6. Add websites, enable Focus Mode, and start a countdown. Stopwatch mode does not block sites.
 
-Domains include subdomains; pasting a URL adds its entire host. To block both `youtube.com` and `www.youtube.com`, add `youtube.com`. Pause, reset, completion, disabling Browser Focus, and quitting release access, normally within one second. If the app crashes or stops responding, its four-second lease expires. Chrome suspension can delay cleanup until the browser resumes; a watchdog and focus-page checks recover it.
+Domains include subdomains; pasting a URL adds its entire host. To block both `youtube.com` and `www.youtube.com`, add `youtube.com`. Pause, reset, completion, disabling Focus Mode, and quitting release access, normally within one second. If the app crashes or stops responding, its four-second lease expires. Chrome suspension can delay cleanup until the browser resumes; a watchdog and focus-page checks recover it.
 
 New GET page navigations redirect to a focus page. Existing web pages receive a removable modal cover, preserving forms and page state. Form submissions are not redirected. Browser-internal pages, other browsers, and incognito (unless explicitly enabled in Chrome) are outside this feature's scope. Existing audio/video may continue beneath the cover. This is voluntary focus assistance, not a tamper-resistant website filter.
 
@@ -94,6 +94,6 @@ python3 Tests/BrowserFocus/native-host.test.py
 
 Timer logic lives in `Sources/TimerCore`; the macOS interface lives in `Sources/NotchTimer`. Tests cover timing, pause/resume, completion, mode changes, and formatting.
 
-Browser focus policy and lease tests live alongside timer tests. `tools/browser-focus-host` implements Chrome's length-prefixed JSON protocol, and `browser-extension` contains the Manifest V3 companion. The build bundles both into the app. The helper is compiled separately, so `swift run` continues to launch only Notch Timer. Extension tests exercise rule cleanup, disconnects, malformed sessions, expiry, and queued updates; helper tests exercise framing and invalid input.
+Focus Mode policy and lease tests live alongside timer tests. `tools/browser-focus-host` implements Chrome's length-prefixed JSON protocol, and `browser-extension` contains the Manifest V3 companion. The build bundles both into the app. The helper is compiled separately, so `swift run` continues to launch only Notch Timer. Extension tests exercise rule cleanup, disconnects, malformed sessions, expiry, and queued updates; helper tests exercise framing and invalid input.
 
 For a manual end-to-end check, leave an unsaved draft on a listed site, start a countdown, and verify both that the draft is covered and that a new visit redirects. Pause and confirm the draft remains, then check reset, completion, quit, app crash, Chrome restart, and extension reload. Verify that unlisted sites and the notch controls remain usable.

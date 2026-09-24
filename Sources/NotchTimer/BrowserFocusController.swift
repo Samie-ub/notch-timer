@@ -80,7 +80,7 @@ final class BrowserFocusController: ObservableObject {
             let folder = FileManager.default.homeDirectoryForCurrentUser
                 .appendingPathComponent("Library/Application Support/Google/Chrome/NativeMessagingHosts")
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            let manifest: [String: Any] = ["name": "com.local.notchtimer.focus", "description": "settime Browser Focus",
+            let manifest: [String: Any] = ["name": "com.local.notchtimer.focus", "description": "settime Focus Mode",
                 "path": helper.path, "type": "stdio", "allowed_origins": ["chrome-extension://\(id)/"]]
             try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys])
                 .write(to: folder.appendingPathComponent("com.local.notchtimer.focus.json"), options: .atomic)
@@ -124,18 +124,18 @@ struct BrowserFocusSettingsView: View {
 
     private var focusToggle: some View {
         HStack(spacing: 14) {
-            Image(systemName: "globe.badge.chevron.backward")
+            Image(systemName: "scope")
                 .font(.system(size: 18, weight: .medium))
                 .foregroundStyle(Color(nsColor: .systemGreen))
                 .frame(width: 42, height: 42)
                 .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 13))
             VStack(alignment: .leading, spacing: 3) {
-                Text("Browser Focus").font(.headline)
+                Text("Focus Mode").font(.headline)
                 Text("Block selected sites during focus")
                     .font(.subheadline).foregroundStyle(.secondary)
             }
             Spacer(minLength: 4)
-            Toggle("Enable Browser Focus", isOn: $focus.enabled)
+            Toggle("Enable Focus Mode", isOn: $focus.enabled)
                 .labelsHidden().toggleStyle(.switch).tint(Color(nsColor: .systemGreen))
         }
         .padding(15)
