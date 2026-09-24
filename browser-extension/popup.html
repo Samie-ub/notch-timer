@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>settime Browser Focus</title>
+  <link rel="stylesheet" href="page.css">
+</head>
+<body class="popup">
+  <main class="popup-shell">
+    <header class="brand">
+      <img src="icon32.png" alt="" width="28" height="28">
+      <span>settime</span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-product">BROWSER FOCUS</span>
+    </header>
+    <h1>Stay in your flow.</h1>
+    <section class="status-card" aria-live="polite">
+      <span id="status-dot" class="status-dot" aria-hidden="true"></span>
+      <p id="status" role="status">Connecting…</p>
+    </section>
+    <p class="description">Manage distracting websites and start a countdown from the Browser Focus panel in settime.</p>
+    <section class="setup-card">
+      <p class="eyebrow">ONE-TIME CONNECTION</p>
+      <p class="setup-copy">Paste this extension ID into <strong>settime → Browser Focus → Connect Chrome</strong>.</p>
+      <code id="extension-id" aria-label="Extension ID"></code>
+      <p id="error" class="error"></p>
+    </section>
+    <footer>Pages stay open while your focus session is active.</footer>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

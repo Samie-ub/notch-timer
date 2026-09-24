@@ -3,34 +3,45 @@ import Combine
 import TimerCore
 
 enum NotchScreen {
-    case compact, controls, duration, customDuration, mode
+    case compact, controls, duration, customDuration, mode, browserFocus
+
+    var isFeaturePanel: Bool { self == .browserFocus }
 }
 
 @MainActor
 final class TimerModel: ObservableObject {
+    let browserFocus = BrowserFocusController()
+    @Published var featurePanelSize = CGSize(width: 360, height: 560)
     @Published private(set) var engine = TimerEngine()
     @Published private(set) var now: TimeInterval = 0
     @Published var notchScreen: NotchScreen = .compact
     @Published var soundEnabled: Bool {
         didSet { UserDefaults.standard.set(soundEnabled, forKey: "soundEnabled") }
     }
-    @Published var buttonSoundsEnabled: Bool {
-        didSet { UserDefaults.standard.set(buttonSoundsEnabled, forKey: "buttonSoundsEnabled") }
-    }
-    private let buttonSound = NSSound(named: "Tink")
-    private var lastButtonSound: TimeInterval = -.infinity
+    private let startSound: NSSound?
+    private let pauseSound: NSSound?
+    private let stopSound: NSSound?
+    private let timesUpSound: NSSound?
     private let clock = ContinuousClock()
     private let origin = ContinuousClock.now
     private var ticker: AnyCancellable?
 
     init() {
         let defaults = UserDefaults.standard
+        startSound = TimerModel.loadSound("start")
+        pauseSound = TimerModel.loadSound("pause")
+        stopSound = TimerModel.loadSound("stop")
+        timesUpSound = TimerModel.loadSound("times-up")
         soundEnabled = defaults.object(forKey: "soundEnabled") as? Bool ?? true
-        buttonSoundsEnabled = defaults.object(forKey: "buttonSoundsEnabled") as? Bool ?? true
-        buttonSound?.volume = 0.22
         if let duration = defaults.object(forKey: "duration") as? Double {
             engine.setDuration(duration)
         }
+        browserFocus.changed = { [weak self] in self?.syncBrowserFocus() }
+        syncBrowserFocus()
+    }
+
+    private func syncBrowserFocus() {
+        browserFocus.synchronize(engine: engine, now: now)
     }
 
     var time: String { TimerEngine.formatted(engine.value(at: now), countdown: engine.mode == .timer) }
@@ -46,22 +57,35 @@ final class TimerModel: ObservableObject {
         return Double(components.seconds) + Double(components.attoseconds) / 1e18
     }
 
-    func playButtonSound() {
-        guard buttonSoundsEnabled else { return }
-        let time = timestamp()
-        guard time - lastButtonSound >= 0.08 else { return }
-        lastButtonSound = time
-        buttonSound?.stop()
-        buttonSound?.play()
+    private static func loadSound(_ name: String) -> NSSound? {
+        let extensions = name == "start" ? ["m4a", "mp3"] : ["mp3"]
+        let roots = [Bundle.main.resourceURL,
+                     URL(fileURLWithPath: FileManager.default.currentDirectoryPath)]
+            .compactMap { $0 }
+        for ext in extensions {
+            for root in roots {
+                let url = root.appendingPathComponent("sounds/\(name).\(ext)")
+                if FileManager.default.fileExists(atPath: url.path),
+                   let sound = NSSound(contentsOf: url, byReference: false) {
+                    return sound
+                }
+            }
+        }
+        return nil
     }
 
     func toggle() {
+        defer { syncBrowserFocus() }
         tick()
         if engine.isRunning {
             engine.pause(at: now)
             ticker = nil
+            pauseSound?.stop()
+            pauseSound?.play()
         } else {
             engine.start(at: now)
+            startSound?.stop()
+            startSound?.play()
             ticker = Timer.publish(every: 0.1, on: .main, in: .common)
                 .autoconnect().sink { [weak self] _ in
                     MainActor.assumeIsolated { self?.tick() }
@@ -70,17 +94,32 @@ final class TimerModel: ObservableObject {
     }
 
     func tick() {
+        defer { syncBrowserFocus() }
         now = timestamp()
         if engine.update(at: now) {
             ticker = nil
-            if soundEnabled { NSSound(named: "Glass")?.play() }
+            if soundEnabled {
+                timesUpSound?.stop()
+                timesUpSound?.play()
+            }
         }
     }
 
-    func reset() { ticker = nil; engine.reset(); now = timestamp() }
+    func reset() {
+        let wasActive = engine.isRunning || (!engine.isFinished && engine.elapsed(at: now) > 0)
+        ticker = nil
+        engine.reset()
+        now = timestamp()
+        if wasActive {
+            stopSound?.stop()
+            stopSound?.play()
+        }
+        syncBrowserFocus()
+    }
     func setMode(_ mode: TimerMode) {
         guard !engine.isRunning else { return }
         engine.setMode(mode)
+        syncBrowserFocus()
     }
     func setDuration(_ seconds: TimeInterval) {
         guard !engine.isRunning else { return }

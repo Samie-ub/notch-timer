@@ -7,11 +7,8 @@ private enum Style {
 }
 
 private struct NotchButtonStyle: PrimitiveButtonStyle {
-    var feedback: () -> Void
-
     func makeBody(configuration: Configuration) -> some View {
         Button(role: configuration.role) {
-            feedback()
             configuration.trigger()
         } label: {
             configuration.label
@@ -24,6 +21,7 @@ struct NotchView: View {
     @ObservedObject var model: TimerModel
     var openControls: () -> Void
     var closeControls: () -> Void
+    var openBrowserFocus: () -> Void
     var hoverChanged: (Bool) -> Void
     var dragChanged: (CGPoint) -> Void
     var dragEnded: () -> Void
@@ -32,7 +30,10 @@ struct NotchView: View {
     @State private var draftSeconds = 0
 
     private var expanded: Bool { model.notchScreen != .compact }
-    private var size: CGSize { expanded ? NotchLayout.expandedSize : NotchLayout.size }
+    private var size: CGSize { NotchLayout.size(for: model.notchScreen, featureSize: model.featurePanelSize) }
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: model.notchScreen.isFeaturePanel ? 24 : size.height / 2)
+    }
 
     var body: some View {
         ZStack {
@@ -43,6 +44,11 @@ struct NotchView: View {
                 case .duration: durationPresets
                 case .customDuration: customDuration
                 case .mode: modeSelection
+                case .browserFocus:
+                    NotchFeatureContainer(title: "Browser Focus", symbol: "globe", done: closeControls,
+                                          dragChanged: dragChanged, dragEnded: dragEnded) {
+                        BrowserFocusSettingsView(focus: model.browserFocus, model: model)
+                    }
                 }
             }
             .id(model.notchScreen)
@@ -56,15 +62,16 @@ struct NotchView: View {
                     .transition(.identity)
             }
         }
-        .clipShape(Capsule())
-        .overlay(Capsule().strokeBorder(.white.opacity(expanded ? 0.16 : 0.08), lineWidth: 0.5))
-        .animation(NotchLayout.animation(reduceMotion: reduceMotion), value: expanded)
-        .contentShape(Capsule())
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(.white.opacity(expanded ? 0.16 : 0.08), lineWidth: 0.5))
+        .animation(NotchLayout.animation(reduceMotion: reduceMotion), value: model.notchScreen)
+        .contentShape(shape)
         .onHover(perform: hoverChanged)
         .highPriorityGesture(
             DragGesture(minimumDistance: 5)
                 .onChanged { _ in dragChanged(NSEvent.mouseLocation) }
-                .onEnded { _ in dragEnded() }
+                .onEnded { _ in dragEnded() },
+            including: model.notchScreen.isFeaturePanel ? .subviews : .all
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .preferredColorScheme(.dark)
@@ -108,7 +115,7 @@ struct NotchView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
+            .buttonStyle(NotchButtonStyle())
             .accessibilityLabel("\(model.engine.mode.rawValue), \(model.time). \(model.status)")
             .accessibilityHint("Open notch controls")
             .help("Notch controls")
@@ -121,7 +128,7 @@ struct NotchView: View {
                     .background(.black.opacity(0.28), in: Circle())
                     .contentShape(Circle())
             }
-            .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
+            .buttonStyle(NotchButtonStyle())
             .accessibilityLabel(model.engine.isRunning ? "Pause" : "Start")
             .help(model.engine.isRunning ? "Pause" : "Start")
             .padding(.trailing, 3)
@@ -142,7 +149,7 @@ struct NotchView: View {
                 .frame(height: 28)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
+            .buttonStyle(NotchButtonStyle())
             .disabled(model.engine.isRunning)
             .help(model.engine.isRunning ? "Pause to change mode" : "Change mode")
 
@@ -157,11 +164,12 @@ struct NotchView: View {
                     .frame(maxWidth: .infinity, minHeight: 28)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
+            .buttonStyle(NotchButtonStyle())
             .disabled(model.engine.isRunning || model.engine.mode == .stopwatch)
             .accessibilityLabel("Duration, \(model.time)")
             .help(model.engine.isRunning ? "Pause to change duration" : "Change duration")
 
+            iconButton("globe", label: "Browser Focus", action: openBrowserFocus)
             iconButton("arrow.counterclockwise", label: "Reset") {
                 model.reset()
             }
@@ -247,7 +255,7 @@ struct NotchView: View {
                 .background(tint.opacity(0.14), in: Circle())
                 .contentShape(Circle())
         }
-        .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
+        .buttonStyle(NotchButtonStyle())
         .accessibilityLabel(label)
         .help(label)
     }
@@ -263,7 +271,7 @@ struct NotchView: View {
                 .background(selected ? Color.white : .white.opacity(0.10), in: Capsule())
                 .contentShape(Capsule())
         }
-        .buttonStyle(NotchButtonStyle(feedback: model.playButtonSound))
+        .buttonStyle(NotchButtonStyle())
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -277,11 +285,51 @@ struct NotchView: View {
             Spacer(minLength: 0)
             Stepper(unit == "min" ? "Minutes" : "Seconds", value: Binding(
                 get: { value.wrappedValue },
-                set: { value.wrappedValue = $0; model.playButtonSound() }
+                set: { value.wrappedValue = $0 }
             ), in: range)
                 .labelsHidden()
                 .controlSize(.small)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// A reusable downward-expanding surface for settings and future notch features.
+private struct NotchFeatureContainer<Content: View>: View {
+    var title: String
+    var symbol: String
+    var done: () -> Void
+    var dragChanged: (CGPoint) -> Void
+    var dragEnded: () -> Void
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                HStack(spacing: 9) {
+                    Image(systemName: symbol).foregroundStyle(.green)
+                    Text(title).font(.headline)
+                }
+                .frame(height: 28)
+                .contentShape(Rectangle())
+                .gesture(DragGesture(minimumDistance: 5)
+                    .onChanged { _ in dragChanged(NSEvent.mouseLocation) }
+                    .onEnded { _ in dragEnded() })
+                .help("Drag the title to move the panel")
+                Spacer()
+                Button("Done", action: done)
+                    .buttonStyle(.plain)
+                    .modifier(BrowserFocusPointerStyle())
+                    .font(.callout.weight(.semibold))
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(.white.opacity(0.12), in: Capsule())
+                    .accessibilityHint("Collapse to the timer notch")
+            }
+            .padding(.horizontal, 20)
+            .frame(height: 50)
+            Divider().overlay(.white.opacity(0.08))
+            content()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 }

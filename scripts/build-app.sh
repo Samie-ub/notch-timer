@@ -5,15 +5,29 @@ cd "$(dirname "$0")/.."
 export CLANG_MODULE_CACHE_PATH="$PWD/.build/clang-module-cache"
 swift build -c release --disable-sandbox
 BIN_DIR="$(swift build -c release --show-bin-path)"
-APP="$PWD/dist/Notch Timer.app"
+APP="$PWD/dist/settime.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+if [ ! -f resources/settime.icns ]; then
+    swift scripts/make-app-icon.swift resources/settime.iconset
+fi
 cp "$BIN_DIR/NotchTimer" "$APP/Contents/MacOS/NotchTimer"
+cp resources/settime.icns "$APP/Contents/Resources/settime.icns"
+# Compile the Chrome-only helper separately so plain `swift run` remains unambiguous.
+swiftc -O -target "$(uname -m)-apple-macosx14.0" \
+    Sources/TimerCore/TimerEngine.swift Sources/TimerCore/BrowserFocus.swift \
+    tools/browser-focus-host/main.swift -o "$APP/Contents/MacOS/BrowserFocusHost"
+mkdir -p "$APP/Contents/Resources/browser-extension" "$APP/Contents/Resources/sounds"
+cp browser-extension/* "$APP/Contents/Resources/browser-extension/"
+cp sounds/pause.mp3 sounds/stop.mp3 sounds/times-up.mp3 "$APP/Contents/Resources/sounds/"
+cp sounds/start.m4a "$APP/Contents/Resources/sounds/start.m4a"
+rm -f "$APP/Contents/Resources/sounds/start.mp3"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-    <key>CFBundleName</key><string>Notch Timer</string>
-    <key>CFBundleDisplayName</key><string>Notch Timer</string>
+    <key>CFBundleName</key><string>settime</string>
+    <key>CFBundleDisplayName</key><string>settime</string>
+    <key>CFBundleIconFile</key><string>settime</string>
     <key>CFBundleIdentifier</key><string>com.local.notchtimer</string>
     <key>CFBundleExecutable</key><string>NotchTimer</string>
     <key>CFBundlePackageType</key><string>APPL</string>
@@ -24,5 +38,6 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
     <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
+codesign --force --sign - "$APP/Contents/MacOS/BrowserFocusHost"
 codesign --force --sign - "$APP"
 echo "Built: $APP"

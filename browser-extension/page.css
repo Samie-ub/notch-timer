@@ -1,0 +1,53 @@
+:root {
+  color-scheme: dark;
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  color: #edf6f0;
+  background: #131f26;
+  --surface: #1a2931;
+  --inset: #101b21;
+  --mint: #78edba;
+  --muted: #aabbb5;
+  --subtle: #74867f;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 28px; }
+.brand { display: flex; align-items: center; gap: 9px; color: #edf6f0; font-size: 14px; font-weight: 650; letter-spacing: -.02em; }
+.brand img { display: block; border-radius: 7px; }
+.brand-divider { width: 1px; height: 16px; margin: 0 2px; background: #33434a; }
+.brand-product, .eyebrow { color: var(--mint); font-size: 9px; font-weight: 700; letter-spacing: .15em; }
+.popup { min-height: 0; width: 360px; padding: 0; background: #131f26; }
+.popup-shell { width: 100%; padding: 22px; }
+h1 { margin: 22px 0 16px; font-size: 25px; font-weight: 620; letter-spacing: -.045em; }
+.status-card { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border: 1px solid #2a3a41; border-radius: 13px; background: var(--surface); }
+.status-card p { margin: 0; color: #e2eee8; font-size: 13px; font-weight: 550; }
+.status-dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: #82928c; box-shadow: 0 0 0 3px #82928c22; }
+.status-dot.active { background: var(--mint); box-shadow: 0 0 0 3px #78edba22; }
+.status-dot.warning { background: #e7bd6c; box-shadow: 0 0 0 3px #e7bd6c22; }
+.description, .setup-copy { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.description { margin: 13px 1px 18px; }
+.setup-card { padding: 14px; border: 1px solid #2a3a41; border-radius: 14px; background: #17252c; }
+.eyebrow { margin: 0 0 7px; }
+.setup-copy { margin: 0 0 11px; }
+strong { color: #dfeae4; font-weight: 600; }
+code { display: block; padding: 10px 11px; overflow-wrap: anywhere; border: 1px solid #304149; border-radius: 9px; background: var(--inset); color: var(--mint); font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; user-select: all; cursor: text; }
+.error { margin: 9px 0 0; color: #e7bd6c; font-size: 11px; line-height: 1.45; }
+footer { margin-top: 15px; color: var(--subtle); font-size: 10px; text-align: center; }
+.blocked-shell { width: min(100%, 520px); }
+.focus-card { margin-top: 36px; padding: 34px; border: 1px solid #2a3a41; border-radius: 24px; background: linear-gradient(145deg, #1a2931, #17242b); box-shadow: 0 24px 80px #050b0e66; }
+.focus-mark { position: relative; display: grid; width: 52px; height: 52px; margin-bottom: 25px; place-items: center; border: 2px solid var(--mint); border-radius: 50%; }
+.focus-mark::before { position: absolute; top: -7px; width: 14px; height: 5px; border-radius: 3px; background: var(--mint); content: ""; }
+.focus-mark span { position: absolute; width: 2px; border-radius: 2px; background: #e8f5ef; transform-origin: bottom; }
+.focus-mark span:first-child { height: 14px; transform: translateY(-2px); }
+.focus-mark span:last-child { height: 10px; transform: translate(-4px, 0) rotate(-58deg); }
+.focus-card .eyebrow { margin: 0 0 8px; }
+.focus-card h1 { margin: 0; font-size: clamp(28px, 6vw, 38px); }
+.session-status { margin: 10px 0 0; color: var(--mint); font-size: 15px; font-weight: 560; font-variant-numeric: tabular-nums; }
+.focus-card .description { margin: 17px 0 24px; max-width: 390px; font-size: 14px; }
+button { min-height: 40px; padding: 0 17px; border: 0; border-radius: 999px; background: var(--mint); color: #102018; cursor: pointer; font: inherit; font-weight: 650; }
+button:hover { background: #91f4c9; }
+button:focus-visible { outline: 3px solid #edf6f0; outline-offset: 3px; }
+.blocked-shell > footer { margin-top: 18px; }
+@media (max-width: 480px) {
+  body:not(.popup) { padding: 18px; }
+  .focus-card { margin-top: 24px; padding: 26px; border-radius: 20px; }
+}
