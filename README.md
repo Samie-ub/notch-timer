@@ -56,6 +56,9 @@ Pause before changing mode or duration. Unapplied custom-time changes are discar
 5. Copy the extension's ID into Focus Mode settings and click **Connect Chrome**. The extension popup should say **Bridge connected**.
 6. Add websites, enable Focus Mode, and start a countdown. Stopwatch mode does not block sites.
 
+The Focus Mode panel stays above menu-bar icons. **Done** returns to the expanded timer controls;
+moving the pointer away then collapses the notch as usual.
+
 Domains include subdomains; pasting a URL adds its entire host. To block both `youtube.com` and `www.youtube.com`, add `youtube.com`. Pause, reset, completion, disabling Focus Mode, and quitting release access, normally within one second. If the app crashes or stops responding, its four-second lease expires. Chrome suspension can delay cleanup until the browser resumes; a watchdog and focus-page checks recover it.
 
 New GET page navigations redirect to a focus page. Existing web pages receive a removable modal cover, preserving forms and page state. Form submissions are not redirected. Browser-internal pages, other browsers, and incognito (unless explicitly enabled in Chrome) are outside this feature's scope. Existing audio/video may continue beneath the cover. This is voluntary focus assistance, not a tamper-resistant website filter.

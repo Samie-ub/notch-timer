@@ -30,7 +30,9 @@ final class FloatingPanel: NSPanel {
         super.init(contentRect: NSRect(origin: .zero, size: size),
                    styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         isFloatingPanel = true
-        level = .statusBar
+        // Stay above menu-bar status items in every presentation state.
+        // Native popup menus retain their own higher window level.
+        level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 1)
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .canJoinAllApplications]
         isOpaque = false
         backgroundColor = .clear
@@ -180,6 +182,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func showSettings() {
+        if model.notchScreen.isFeaturePanel {
+            ignoreHoverUntilExit = false
+            transition(to: .controls, activate: true)
+            return
+        }
         expandControls(activate: true)
         if !isNotchHovered { scheduleHoverClose() }
     }
@@ -231,7 +238,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         transitionID += 1
         let currentTransition = transitionID
         isPreparingExpansion = true
-        notch.level = screen.isFeaturePanel ? .floating : .statusBar
         if screen.isFeaturePanel {
             let bounds = notch.screen?.visibleFrame ?? NSScreen.main?.visibleFrame
             model.featurePanelSize = CGSize(

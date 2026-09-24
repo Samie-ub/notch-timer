@@ -1,6 +1,6 @@
 {
-  "version": "1.1.2",
-  "build": "4",
+  "version": "1.1.3",
+  "build": "5",
   "feedURL": "https://github.com/Samie-ub/notch-timer/releases/latest/download/appcast.xml",
   "publicKey": "rGpdAz/6P8NAEoI/FMxgz85Om2uD1gpkkMi2JI300QQ=",
   "keychainAccount": "com.local.notchtimer"

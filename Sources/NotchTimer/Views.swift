@@ -45,7 +45,7 @@ struct NotchView: View {
                 case .customDuration: customDuration
                 case .mode: modeSelection
                 case .browserFocus:
-                    NotchFeatureContainer(title: "Focus Mode", symbol: "scope", done: closeControls,
+                    NotchFeatureContainer(title: "Focus Mode", symbol: "scope", done: openControls,
                                           dragChanged: dragChanged, dragEnded: dragEnded) {
                         BrowserFocusSettingsView(focus: model.browserFocus, model: model)
                     }
@@ -317,13 +317,16 @@ private struct NotchFeatureContainer<Content: View>: View {
                     .onEnded { _ in dragEnded() })
                 .help("Drag the title to move the panel")
                 Spacer()
-                Button("Done", action: done)
+                Button(action: done) {
+                    Text("Done")
+                        .font(.callout.weight(.semibold))
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(.white.opacity(0.12), in: Capsule())
+                        .contentShape(Capsule())
+                }
                     .buttonStyle(.plain)
                     .modifier(BrowserFocusPointerStyle())
-                    .font(.callout.weight(.semibold))
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(.white.opacity(0.12), in: Capsule())
-                    .accessibilityHint("Collapse to the timer notch")
+                    .accessibilityHint("Return to the expanded timer controls")
             }
             .padding(.horizontal, 20)
             .frame(height: 50)
