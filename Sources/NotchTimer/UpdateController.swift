@@ -4,13 +4,13 @@ import Sparkle
 /// Owns Sparkle for the lifetime of the app. Plain `swift run` has no update bundle.
 @MainActor
 final class UpdateController: NSObject, SPUUpdaterDelegate, NSMenuItemValidation {
-    private let hasSession: () -> Bool
+    private let prepareForRestart: () -> Void
+    private let cancelRestart: () -> Void
     private var controller: SPUStandardUpdaterController?
-    private var deferredInstall: Task<Void, Never>?
-    private var restartingForUpdate = false
 
-    init(hasSession: @escaping () -> Bool) {
-        self.hasSession = hasSession
+    init(prepareForRestart: @escaping () -> Void, cancelRestart: @escaping () -> Void) {
+        self.prepareForRestart = prepareForRestart
+        self.cancelRestart = cancelRestart
         super.init()
         guard Bundle.main.bundleURL.pathExtension == "app",
               let key = Bundle.main.object(forInfoDictionaryKey: "SUPublicEDKey") as? String,
@@ -32,39 +32,14 @@ final class UpdateController: NSObject, SPUUpdaterDelegate, NSMenuItemValidation
             item.state = controller?.updater.automaticallyChecksForUpdates == true ? .on : .off
             return controller != nil
         }
-        item.title = deferredInstall == nil ? "Check for Updates…" : "Update Waiting for Session to End"
-        if deferredInstall != nil { return false }
         return controller?.updater.canCheckForUpdates == true
     }
 
-    func updater(_ updater: SPUUpdater, shouldPostponeRelaunchForUpdate item: SUAppcastItem,
-                 untilInvokingBlock installHandler: @escaping () -> Void) -> Bool {
-        guard hasSession() else { return false }
-        deferredInstall?.cancel()
-        deferredInstall = Task { @MainActor [weak self] in
-            while self?.hasSession() == true {
-                do { try await Task.sleep(for: .seconds(1)) } catch { return }
-            }
-            guard self != nil, !Task.isCancelled else { return }
-            self?.deferredInstall = nil
-            installHandler()
-        }
-        return true
-    }
-
     func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
-        restartingForUpdate = true
-    }
-
-    /// Final guard if a new session starts after the deferred install was released.
-    func shouldCancelRestart() -> Bool {
-        defer { restartingForUpdate = false }
-        return restartingForUpdate && hasSession()
+        prepareForRestart()
     }
 
     func updater(_ updater: SPUUpdater, didAbortWithError error: Error) {
-        deferredInstall?.cancel()
-        deferredInstall = nil
-        restartingForUpdate = false
+        cancelRestart()
     }
 }

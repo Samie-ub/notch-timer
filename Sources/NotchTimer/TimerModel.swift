@@ -25,6 +25,7 @@ final class TimerModel: ObservableObject {
     private let clock = ContinuousClock()
     private let origin = ContinuousClock.now
     private var ticker: AnyCancellable?
+    private static let updateSessionKey = "updateRestartSession"
 
     init() {
         let defaults = UserDefaults.standard
@@ -35,6 +36,18 @@ final class TimerModel: ObservableObject {
         soundEnabled = defaults.object(forKey: "soundEnabled") as? Bool ?? true
         if let duration = defaults.object(forKey: "duration") as? Double {
             engine.setDuration(duration)
+        }
+        if let data = defaults.data(forKey: Self.updateSessionKey) {
+            // Consume once, so a later normal launch never restores an old update session.
+            defaults.removeObject(forKey: Self.updateSessionKey)
+            if let snapshot = try? JSONDecoder().decode(TimerSessionSnapshot.self, from: data) {
+                now = timestamp()
+                if let restored = TimerEngine(snapshot: snapshot, now: now, wallTime: Date().timeIntervalSince1970) {
+                    engine = restored
+                    if engine.isRunning { startTicker() }
+                    if engine.isFinished && !snapshot.isFinished && soundEnabled { timesUpSound?.play() }
+                }
+            }
         }
         browserFocus.changed = { [weak self] in self?.syncBrowserFocus() }
         syncBrowserFocus()
@@ -86,11 +99,29 @@ final class TimerModel: ObservableObject {
             engine.start(at: now)
             startSound?.stop()
             startSound?.play()
-            ticker = Timer.publish(every: 0.1, on: .main, in: .common)
-                .autoconnect().sink { [weak self] _ in
-                    MainActor.assumeIsolated { self?.tick() }
-                }
+            startTicker()
         }
+    }
+
+    private func startTicker() {
+        ticker = Timer.publish(every: 0.1, on: .main, in: .common)
+            .autoconnect().sink { [weak self] _ in
+                MainActor.assumeIsolated { self?.tick() }
+            }
+    }
+
+    func prepareForUpdateRestart() {
+        tick()
+        let snapshot = engine.snapshot(at: now, wallTime: Date().timeIntervalSince1970)
+        if let data = try? JSONEncoder().encode(snapshot) {
+            UserDefaults.standard.set(data, forKey: Self.updateSessionKey)
+            // Flush this one-shot handoff before Sparkle terminates the process.
+            UserDefaults.standard.synchronize()
+        }
+    }
+
+    func cancelUpdateRestart() {
+        UserDefaults.standard.removeObject(forKey: Self.updateSessionKey)
     }
 
     func tick() {

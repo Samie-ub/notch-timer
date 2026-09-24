@@ -44,10 +44,10 @@ final class FloatingPanel: NSPanel {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let model = TimerModel()
-    private lazy var updates = UpdateController { [weak self] in
-        guard let self else { return false }
-        return model.engine.hasUnfinishedSession
-    }
+    private lazy var updates = UpdateController(
+        prepareForRestart: { [weak self] in self?.model.prepareForUpdateRestart() },
+        cancelRestart: { [weak self] in self?.model.cancelUpdateRestart() }
+    )
     private var notch: FloatingPanel!
     private var transitionID = 0
     private var isPreparingExpansion = false
@@ -265,10 +265,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func resetTimer() { model.reset() }
     @objc private func screenChanged() { placeNotch() }
     @objc private func wokeUp() { model.tick(); placeNotch(); notch.orderFrontRegardless() }
-
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        updates.shouldCancelRestart() ? .terminateCancel : .terminateNow
-    }
 
     func applicationWillTerminate(_ notification: Notification) {
         model.browserFocus.stop()

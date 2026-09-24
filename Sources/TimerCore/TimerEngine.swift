@@ -1,6 +1,6 @@
 import Foundation
 
-public enum TimerMode: String, CaseIterable, Sendable {
+public enum TimerMode: String, CaseIterable, Codable, Sendable {
     case timer = "Timer"
     case stopwatch = "Stopwatch"
 }
@@ -16,9 +16,24 @@ public struct TimerEngine: Sendable {
 
     public init() {}
 
-    /// A paused session still has time to preserve across an app restart.
-    public var hasUnfinishedSession: Bool {
-        isRunning || (!isFinished && accumulated > 0)
+    public func snapshot(at now: TimeInterval, wallTime: TimeInterval) -> TimerSessionSnapshot {
+        TimerSessionSnapshot(mode: mode, duration: duration, elapsed: elapsed(at: now),
+                             isRunning: isRunning, isFinished: isFinished, savedAt: wallTime)
+    }
+
+    public init?(snapshot: TimerSessionSnapshot, now: TimeInterval, wallTime: TimeInterval) {
+        guard snapshot.duration.isFinite, (1...5999).contains(snapshot.duration),
+              snapshot.elapsed.isFinite, snapshot.elapsed >= 0,
+              snapshot.savedAt.isFinite, wallTime.isFinite, now.isFinite else { return nil }
+        mode = snapshot.mode
+        duration = snapshot.duration
+        let downtime = snapshot.isRunning ? max(0, wallTime - snapshot.savedAt) : 0
+        accumulated = snapshot.elapsed + downtime
+        guard accumulated.isFinite, accumulated <= 1e12 else { return nil }
+        isFinished = mode == .timer && (snapshot.isFinished || accumulated >= duration)
+        if isFinished { accumulated = duration }
+        isRunning = snapshot.isRunning && !isFinished
+        startedAt = isRunning ? now : nil
     }
 
     public func elapsed(at now: TimeInterval) -> TimeInterval {
@@ -81,4 +96,14 @@ public struct TimerEngine: Sendable {
         }
         return String(format: "%02d:%02d", seconds / 60, seconds % 60)
     }
+}
+
+/// Only persisted for an explicit updater restart, not ordinary quits.
+public struct TimerSessionSnapshot: Codable, Sendable {
+    public let mode: TimerMode
+    public let duration: TimeInterval
+    public let elapsed: TimeInterval
+    public let isRunning: Bool
+    public let isFinished: Bool
+    public let savedAt: TimeInterval
 }

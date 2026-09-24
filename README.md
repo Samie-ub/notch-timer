@@ -14,7 +14,7 @@ A minimal timer and stopwatch for macOS, built with SwiftUI and AppKit. Hover to
 - **Subtle animation** — smooth transitions with support for Reduce Motion.
 - **Timer sounds** — `start.m4a` and `pause.mp3` play when a session starts or pauses, `stop.mp3` when you reset an active or paused session, and `times-up.mp3` when a countdown completes. The completion sound can be toggled from the controls. No sounds play on button clicks.
 - **Native** — SwiftUI and AppKit, no accounts or Dock icon. Sparkle checks for app updates over HTTPS; timer data stays local.
-- **App updates** — check from the menu bar, or toggle automatic checks. Installation is user initiated and waits for unfinished timer/stopwatch sessions to finish or reset.
+- **App updates** — check from the menu bar, or toggle automatic checks. Install and Relaunch restarts automatically and restores the timer or stopwatch session.
 - **Focus Mode for Chrome** — optionally block distracting websites during countdowns with a companion extension. Existing tabs are covered without closing or reloading them.
 
 ## Get started
@@ -45,7 +45,7 @@ The build script creates a locally signed app in `dist/`. For development, run `
 | Reset position | Choose **Reset Notch Position** from the menu bar icon |
 | Quit | Use the timer icon in the menu bar |
 
-Pause before changing mode or duration. Unapplied custom-time changes are discarded when the strip closes. Active timer sessions do not persist after quitting.
+Pause before changing mode or duration. Unapplied custom-time changes are discarded when the strip closes. Ordinary quits discard active sessions; update restarts restore them.
 
 ## Focus Mode setup
 
@@ -75,9 +75,10 @@ Developer ID signing and notarization, downloaded first-time installs may need m
 approval in macOS Privacy & Security. Plain `swift run` disables the update menu because
 it is not an installed app bundle.
 
-If you select Install while a timer or stopwatch session is unfinished, restarting waits
-until completion or reset. Pausing preserves the session and keeps the update waiting.
-Quitting explicitly still quits normally. Automatic silent installation is disabled.
+Selecting **Install and Relaunch** restarts the app automatically. Running timers and
+stopwatches resume with restart time included; paused sessions stay paused. A countdown
+that ends during the restart returns completed. Ordinary quits still discard the session.
+Automatic silent installation is disabled.
 
 The update feed uses the `appcast.xml` asset on the latest GitHub Release. It becomes
 available after the first release is published; until then checks report a feed error.

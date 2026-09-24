@@ -43,8 +43,8 @@ Run `swift test --disable-sandbox`, `bash scripts/build-app.sh`, and
 `bash scripts/prepare-update.sh`. Bundle verification runs as part of the build.
 For an end-to-end test, install an older updater-enabled build, publish a higher-build
 release to a separate HTTPS test feed, and check/download/install/relaunch from that
-build. Verify idle installation, running and paused timer deferral, stopwatch deferral,
-reset/completion, update cancellation, and offline errors. Do not change a signed
+build. Verify idle installation, running and paused timer restoration, stopwatch restoration,
+completion during restart, update cancellation, and offline errors. Do not change a signed
 installed bundle's plist to simulate an older version.
 
 The original app has no updater: it must be replaced manually once. Future updates
